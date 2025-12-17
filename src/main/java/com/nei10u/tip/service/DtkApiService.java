@@ -56,7 +56,7 @@ public class DtkApiService {
             params.put("cid", cid);
         }
         params.put("appKey", appKey);
-        params.put("version", "v1.1.0");
+        params.put("version", "v1.3.1");
 
         return doRequest(url, params);
     }
