@@ -4,6 +4,8 @@ spring:
   
   datasource:
 #    url: jdbc:postgresql://localhost:5432/tip
+#    username: postgres
+#    password: mac_user1234
     url: jdbc:postgresql://dpg-d514l5dactks73f1felg-a/tip_postgres
     username: tip_postgres_user
     password: qL93OQfLjsEMrnAmVz1T9ina34RxNE74
