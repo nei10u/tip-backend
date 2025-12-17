@@ -42,7 +42,7 @@ public class DtkGoodsServiceImpl extends ServiceImpl<DtkGoodsMapper, DtkGoods> i
         // 执行分页查询，条件为状态正常，按更新时间倒序
         this.page(page, new LambdaQueryWrapper<DtkGoods>()
                 .eq(DtkGoods::getStatus, 1) // Only fetch valid goods
-                .orderByDesc(DtkGoods::getUpdateTime));
+                .orderByDesc(List.of(DtkGoods::getCommissionRate, DtkGoods::getUpdateTime)));
 
         // 构建返回结果JSONObject
         JSONObject result = new JSONObject();
