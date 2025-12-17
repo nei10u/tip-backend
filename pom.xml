@@ -22,7 +22,6 @@
         <java.version>17</java.version>
         <mybatis-plus.version>3.5.4.1</mybatis-plus.version>
         <fastjson.version>2.0.43</fastjson.version>
-        <spring-boot.version>3.1.5</spring-boot.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
@@ -43,18 +42,6 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <!-- Spring Boot Web -->
         <dependency>
@@ -67,6 +54,20 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>${mybatis-plus.version}</version>
+            <exclusions>
+                <!-- Spring Boot 3.x / Spring Framework 6.x 需要 mybatis-spring 3.x；2.x 在 Spring 6.1 上可能触发 FactoryBean 元数据类型异常 -->
+                <exclusion>
+                    <groupId>org.mybatis</groupId>
+                    <artifactId>mybatis-spring</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- MyBatis Spring (Spring Framework 6 兼容) -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>3.0.3</version>
         </dependency>
 
         <!-- PostgreSQL Driver -->
