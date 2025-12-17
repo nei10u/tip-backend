@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nei10u.tip.mapper.MoneyMapper">
+    
+    <select id="getMoneyByUserId" resultType="com.nei10u.tip.model.Money">
+        SELECT * FROM money WHERE user_id = #{userId}
+    </select>
+    
+    <update id="updateBalance">
+        UPDATE money 
+        SET balance = balance + #{amount},
+            total_income = total_income + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <update id="freezeMoney">
+        UPDATE money 
+        SET balance = balance - #{amount},
+            frozen = frozen + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <update id="unfreezeMoney">
+        UPDATE money 
+        SET balance = balance + #{amount},
+            frozen = frozen - #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="deductFrozenMoney">
+        UPDATE money 
+        SET frozen = frozen - #{amount},
+            total_withdraw = total_withdraw + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

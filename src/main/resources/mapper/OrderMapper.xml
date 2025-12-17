@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nei10u.tip.mapper.OrderMapper">
+    
+    <select id="getOrdersByUserId" resultType="com.nei10u.tip.model.Order">
+        SELECT * FROM orders WHERE sid = #{sid} ORDER BY create_time DESC
+    </select>
+    
+    <select id="getOrdersByStatus" resultType="com.nei10u.tip.model.Order">
+        SELECT * FROM orders 
+        WHERE sid = #{sid} 
+        AND order_status IN
+        <foreach collection="statusList" item="status" open="(" separator="," close=")">
+            #{status}
+        </foreach>
+        ORDER BY create_time DESC
+    </select>
+    
+    <select id="getOrderByOrderSn" resultType="com.nei10u.tip.model.Order">
+        SELECT * FROM orders WHERE order_sn = #{orderSn}
+    </select>
+    
+    <insert id="insertOrUpdateBatch">
+        INSERT INTO orders (order_sn, ds_order_sn, order_title, img, sid, type_no, type_name,
+                           union_platform,
+                           order_price, pay_price, share_rate, share_fee,
+                           gross_share_fee, base_deduction_rate, base_deduction_fee,
+                           platform_profit_rate, platform_profit_fee, user_discount, order_discount,
+                           order_status,
+                           status_content, create_time, pay_time, update_time)
+        VALUES
+        <foreach collection="orders" item="order" separator=",">
+            (#{order.orderSn}, #{order.dsOrderSn}, #{order.orderTitle}, #{order.img}, 
+             #{order.sid}, #{order.typeNo}, #{order.typeName},
+             #{order.unionPlatform},
+             #{order.orderPrice}, #{order.payPrice}, #{order.shareRate}, #{order.shareFee},
+             #{order.grossShareFee}, #{order.baseDeductionRate}, #{order.baseDeductionFee},
+             #{order.platformProfitRate}, #{order.platformProfitFee}, #{order.userDiscount}, #{order.orderDiscount},
+             #{order.orderStatus},
+             #{order.statusContent}, #{order.createTime}, #{order.payTime}, #{order.updateTime})
+        </foreach>
+        ON CONFLICT (order_sn) DO UPDATE SET
+            order_status = EXCLUDED.order_status,
+            share_fee = EXCLUDED.share_fee,
+            gross_share_fee = EXCLUDED.gross_share_fee,
+            base_deduction_rate = EXCLUDED.base_deduction_rate,
+            base_deduction_fee = EXCLUDED.base_deduction_fee,
+            platform_profit_rate = EXCLUDED.platform_profit_rate,
+            platform_profit_fee = EXCLUDED.platform_profit_fee,
+            user_discount = EXCLUDED.user_discount,
+            order_discount = EXCLUDED.order_discount,
+            update_time = EXCLUDED.update_time
+    </insert>
+
+    <select id="countOrdersByStatus" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM orders 
+        WHERE sid = #{sid} 
+        <if test="statusList != null and statusList.size() > 0">
+            AND order_status IN
+            <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="sumShareFeeByStatus" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(share_fee), 0) FROM orders 
+        WHERE sid = #{sid} 
+        <if test="statusList != null and statusList.size() > 0">
+            AND order_status IN
+            <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+    </select>
+</mapper>

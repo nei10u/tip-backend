@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nei10u.tip.mapper.PromotionClickMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.nei10u.tip.model.PromotionClick">
+        <id column="id" property="id" />
+        <result column="info_id" property="infoId" />
+        <result column="user_id" property="userId" />
+        <result column="click_time" property="clickTime" />
+        <result column="ip" property="ip" />
+    </resultMap>
+
+</mapper>

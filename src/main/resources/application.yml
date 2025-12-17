@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: tip-backend
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tip
+    username: postgres
+    password: mac_user1234
+    driver-class-name: org.postgresql.Driver
+  
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema.sql
+
+  task:
+    scheduling:
+      pool:
+        size: 5
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.nei10u.tip.model
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+server:
+  port: 8080
+
+# DTK API配置
+app:
+  dtk:
+    app-key: 6936f422c3a79
+    app-secret: b8f60d673b879482b88f21d9e6798df3
+    pid: mm_123_456_789
+
+  wechat:
+    miniapp:
+      appid: your_appid_here
+      secret: your_secret_here
+      token: your_token_here
+      aes-key: your_aes_key_here
+
+  # ZTK API配置 (唯品会)
+  ztk:
+    api-key: your_ztk_api_key
+    sid: your_ztk_sid
+
+  # 本站盈利/分成规则（配置驱动）
+  profit:
+    default-rule:
+      rule-id: default
+      base-deduction-rate: 0.0
+      platform-profit-rate: 0.02
+      user-share-rate: 1.0
+    rules:
+      # 示例：淘宝（DTK）存在固定扣点 0.1 + 平台盈利 0.05，净额全给用户
+      - rule-id: dtk_tb_2025_09_24
+        union-platform: DTK
+        ecommerce-platform: TB
+        effective-from: 2025-09-24T00:00:00
+        base-deduction-rate: 0.10
+        platform-profit-rate: 0.05
+        user-share-rate: 1.0
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
