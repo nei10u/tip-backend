@@ -34,3 +34,5 @@ build/
 run.bat
 
 /logs
+
+src/main/resources/.DS_Store

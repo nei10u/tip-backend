@@ -50,11 +50,30 @@ public class Order {
     // ==========================================
 
     /**
+     * 本站用户ID（平台内用户主键）
+     * 长期推荐的强关联字段：订单同步入库时应解析并填充该字段，
+     * 后续查询/统计均优先按 userId 过滤，避免 sid 多口径带来的歧义。
+     */
+    private Long userId;
+
+    /**
      * 推广位 ID / 用户标识 (SID)
      * 用于关联订单到具体的用户 (User.relationId 或 User.specialId)。
      * 通过此字段判断佣金归属于谁。
      */
     private String sid;
+
+    /**
+     * 淘宝归因字段（分开存储，便于审计/排错）。
+     * 注意：sid 仍保留用于兼容多平台归因；但 TB 建议优先使用 relationId/specialId。
+     */
+    private Long relationId;
+
+    /** 淘宝 specialId（若存在） */
+    private Long specialId;
+
+    /** 淘宝 adZoneId（若存在，用于区分不同推广位规则） */
+    private Long adZoneId;
 
     /**
      * 平台类型编号
@@ -105,8 +124,15 @@ public class Order {
     private Double shareFee;
 
     /**
+     * 已入账金额（订单维度的“实际计入余额”）。
+     * 用途：
+     * - 作为幂等对账锚点：desiredCredit(由订单状态/锁单等规则决定) - creditedFee => 本次应补/应扣 delta
+     * - 支持“重复同步/并发同步/状态回滚/部分退款导致佣金变化”等场景的自动纠偏
+     */
+    private Double creditedFee;
+
+    /**
      * 佣金基数（gross）
-     *
      * 说明：联盟平台返回的原始“可分配金额口径”（可能是佣金/推广金额/利润），
      * 用于拆分固定扣点/平台盈利/用户可得。
      */
@@ -160,9 +186,10 @@ public class Order {
 
     /**
      * 退款状态
+     * 建议口径（对齐 CPS_COMMISSION_AUDIT.md）：
      * 0: 无退款
-     * 1: 维权中
-     * 2: 维权成功
+     * 101: 退款/维权中（佣金重新计算中）
+     * 103: 退款完成（可用于已结算订单佣金扣减的确认态）
      */
     private Integer refundStatus;
 
@@ -210,13 +237,14 @@ public class Order {
 
     /**
      * 支付月份
-     * 格式 yyyyMM，用于按月统计报表。
+     * 可审计分期 key：建议按“应结算日”存 yyyyMMdd（例如 20251220），
+     * 便于直接用于“本月/下月/待入账”的对账切分。
      */
     private String payMonth;
 
     /**
      * 预估结算日期
-     * 格式 yyyy-MM-dd。
+     * 格式 yyyy-MM-dd（通常对应 payMonth 的 20 号）。
      */
     private String estimateDate;
 

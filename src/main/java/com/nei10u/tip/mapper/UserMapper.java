@@ -37,6 +37,16 @@ public interface UserMapper extends BaseMapper<User> {
     User getUserByPhone(@Param("phone") String phone);
 
     /**
+     * 根据拼多多PID查询
+     */
+    User getUserByPddPid(@Param("pddPid") String pddPid);
+
+    /**
+     * 根据京东授权/绑定ID查询
+     */
+    User getUserByJdAuthId(@Param("jdAuthId") String jdAuthId);
+
+    /**
      * 根据Token查询
      */
     User getUserByToken(@Param("token") String token);

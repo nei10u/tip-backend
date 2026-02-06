@@ -1,5 +1,6 @@
 package com.nei10u.tip.service;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,35 +28,97 @@ public class DtkApiService {
     @Value("${app.dtk.app-secret:b8f60d673b879482b88f21d9e6798df3}")
     private String appSecret;
 
+    @Value("${app.dtk.pid:}")
+    private String defaultPid;
+
     private static final String BASE_URL = "https://openapi.dataoke.com";
 
     /**
-     * 获取商品列表
+     * 每日低价抢购
+     * sessions 1已开始 2预告
+     */
+    public String getDailyLowPrice(String sessions, int pageId, int pageSize) {
+        String url = BASE_URL + "/api/goods/get-half-price-day";
+        Map<String, String> params = new TreeMap<>();
+        params.put("appKey", appKey);
+        params.put("version", "v2.0.0");
+        params.put("sessions", String.valueOf(sessions));
+        params.put("pageId", String.valueOf(pageId));
+        params.put("pageSize", String.valueOf(pageSize));
+        return doRequest(url, params);
+    }
+
+    /**
+     * 9.9包邮精选
+     * nineCid
+     */
+    public String getFreeShippingList(String nineCid, int pageId, int pageSize) {
+        String url = BASE_URL + "/api/goods/nine/op-goods-list";
+        Map<String, String> params = new TreeMap<>();
+        params.put("appKey", appKey);
+        params.put("version", "v3.0.0");
+        params.put("nineCid", nineCid);
+        params.put("pageId", String.valueOf(pageId));
+        params.put("pageSize", String.valueOf(pageSize));
+        return doRequest(url, params);
+    }
+
+    /**
+     * 每日爆品
+     * 大淘客的一级分类id，如果需要传多个，以英文逗号相隔，如：”1,2,3”。1 -女装，2 -母婴，3 -美妆，4 -居家日用，5 -鞋品，6 -美食，7 -文娱车品，8 -数码家电，9 -男装，10 -内衣，11 -箱包，12 -配饰，13 -户外运动，14 -家装家纺。不填默认全部
+     *
+     * @param cids     大淘客的一级分类id，如果需要传多个，以英文逗号相隔，如：”1,2,3”。1 -女装，2 -母婴，3 -美妆，4 -居家日用，5 -鞋品，6 -美食，7 -文娱车品，8 -数码家电，9 -男装，10 -内衣，11 -箱包，12 -配饰，13 -户外运动，14 -家装家纺。不填默认全部
+     * @param priceCid 价格区间，1表示10~20元区；2表示20~40元区；3表示40元以上区；默认为1
+     */
+    public String getExplosiveGoodList(String cids, String priceCid, int pageId, int pageSize) {
+        String url = BASE_URL + "/api/goods/explosive-goods-list";
+        Map<String, String> params = new TreeMap<>();
+        params.put("appKey", appKey);
+        params.put("version", "v1.0.0");
+        if (StringUtils.isNotEmpty(cids)) {
+            params.put("cids", cids);
+        }
+        if (StringUtils.isNotEmpty(priceCid)) {
+            params.put("priceCid", priceCid);
+        }
+        params.put("pageId", String.valueOf(pageId));
+        params.put("pageSize", String.valueOf(pageSize));
+        return doRequest(url, params);
+    }
+
+    /**
+     * 获取全量商品列表
      */
     public String getGoodsList(int pageId, int pageSize) {
         String url = BASE_URL + "/api/goods/get-goods-list";
-
         Map<String, String> params = new TreeMap<>();
-        params.put("pageId", String.valueOf(pageId));
-        params.put("pageSize", String.valueOf(pageSize));
         params.put("appKey", appKey);
         params.put("version", "v1.2.3");
-
+        params.put("pageId", String.valueOf(pageId));
+        params.put("pageSize", String.valueOf(pageSize));
         return doRequest(url, params);
     }
 
     /**
      * 获取榜单列表
+     * rankType 榜单类型：1.实时榜 ，2.全天榜，3.热推榜，7.综合热搜榜，8.原实时榜2.0（已升级为实时榜），
+     * 9.必推榜，11.昨日热销榜，12.7日热销榜，13.30日热销榜，14.去年同期热销榜，15.低价高佣榜。
+     * 9以后为2024/05/15新增榜单
+     * cid 大淘客一级类目id，1 -女装，2 -母婴，3 -美妆，4 -居家日用，5 -鞋品，6 -美食，
+     * 7 -文娱车品，8 -数码家电，9 -男装，10 -内衣，11 -箱包，12 -配饰，13 -户外运动，14 -家装家纺
+     * 仅对实时榜单、全天榜单有效
      */
-    public String getRankingList(String rankType, String cid) {
+    public String getRankingList(String rankType, String cid, int pageId, int pageSize) {
         String url = BASE_URL + "/api/goods/get-ranking-list";
 
         Map<String, String> params = new TreeMap<>();
         params.put("rankType", rankType);
-        if (cid != null && !cid.isEmpty()) {
+        if (StringUtils.isNotEmpty(cid)) {
             params.put("cid", cid);
         }
         params.put("appKey", appKey);
+        params.put("pageId", String.valueOf(pageId));
+        params.put("pageSize", String.valueOf(pageSize));
         params.put("version", "v1.3.1");
 
         return doRequest(url, params);
@@ -76,6 +139,24 @@ public class DtkApiService {
         params.put("appKey", appKey);
         params.put("version", "v1.2.2");
 
+        return doRequest(url, params);
+    }
+
+    /**
+     * 猜你喜欢
+     *
+     * @param tbProductId 淘宝商品id
+     * @param size        每页条数，默认10，最大值100
+     */
+    public String guessYouLike(String tbProductId, int size) {
+        String url = BASE_URL + "/api/goods/list-similer-goods-by-open ";
+        Map<String, String> params = new TreeMap<>();
+        params.put("id", tbProductId);
+        if (size > 0) {
+            params.put("size", String.valueOf(size));
+        }
+        params.put("appKey", appKey);
+        params.put("version", "v1.2.2");
         return doRequest(url, params);
     }
 
@@ -117,7 +198,7 @@ public class DtkApiService {
 
     /**
      * 获取商品详情
-     * 
+     *
      * @param goodsId 商品ID
      */
     public String getGoodsDetails(String goodsId) {
@@ -133,7 +214,7 @@ public class DtkApiService {
 
     /**
      * 定时拉取商品
-     * 
+     *
      * @param pageId    页码
      * @param pageSize  每页数量
      * @param cid       分类ID (可选)
@@ -173,7 +254,7 @@ public class DtkApiService {
 
     /**
      * 获取失效商品
-     * 
+     *
      * @param pageId    页码
      * @param pageSize  每页数量
      * @param startTime 开始时间 yyyy-MM-dd HH:mm:ss
@@ -208,7 +289,7 @@ public class DtkApiService {
 
     /**
      * 获取更新商品
-     * 
+     *
      * @param pageId    页码
      * @param pageSize  每页数量
      * @param startTime 开始时间 yyyy-MM-dd HH:mm:ss
@@ -243,7 +324,7 @@ public class DtkApiService {
 
     /**
      * 高效转链
-     * 
+     *
      * @param goodsId    商品ID
      * @param pid        推广位ID (mm_xxx_xxx_xxx)
      * @param channelId  渠道ID (可选)
@@ -258,8 +339,9 @@ public class DtkApiService {
         params.put("appKey", appKey);
         params.put("goodsId", goodsId);
 
-        if (pid != null)
-            params.put("pid", pid);
+        String usePid = (pid != null && !pid.isBlank()) ? pid : defaultPid;
+        if (usePid != null && !usePid.isBlank())
+            params.put("pid", usePid);
         if (channelId != null)
             params.put("channelId", channelId);
         if (specialId != null)
@@ -292,12 +374,12 @@ public class DtkApiService {
             params.forEach((key, value) -> urlBuilder.append(key).append("=").append(value).append("&"));
             String fullUrl = urlBuilder.substring(0, urlBuilder.length() - 1);
 
-            log.info("Requesting DTK API: {}", url);
-            log.debug("Full URL: {}", fullUrl);
+//            log.info("Requesting DTK API: {}", url);
+            log.info("Requesting DTK Full URL: {}", fullUrl);
 
             // 发送请求
             String response = restTemplate.getForObject(fullUrl, String.class);
-            log.debug("DTK API Response: {}", response);
+            log.info("DTK API Response: {}", response);
 
             return response;
         } catch (Exception e) {
@@ -333,4 +415,5 @@ public class DtkApiService {
             throw new RuntimeException("签名生成失败", e);
         }
     }
+
 }

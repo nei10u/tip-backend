@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 通常以大图卡片的形式展示。
  */
 @Data // Lombok 注解：通过字节码增强技术自动生成 Java Bean 方法
-@TableName("home_section") // MyBatis Plus 注解：映射数据库表 home_section
+@TableName("public.home_section") // 明确绑定 public schema，避免 search_path 造成读写漂移
 public class HomeSection {
 
     /**

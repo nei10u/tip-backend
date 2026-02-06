@@ -24,6 +24,8 @@
         <fastjson.version>2.0.43</fastjson.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <!-- 离线复用已打包产物中的淘宝开放平台 SDK（无网络环境下可编译） -->
+        <taobao.sdk.jar>${project.basedir}/../BOOT-INF/lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar</taobao.sdk.jar>
     </properties>
 
     <repositories>
@@ -89,6 +91,15 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>${fastjson.version}</version>
+        </dependency>
+
+        <!-- Taobao Open Platform SDK (system scope, offline) -->
+        <dependency>
+            <groupId>com.taobao.sdk</groupId>
+            <artifactId>taobao-open-sdk</artifactId>
+            <version>local</version>
+            <scope>system</scope>
+            <systemPath>${taobao.sdk.jar}</systemPath>
         </dependency>
 
         <!-- Validation -->

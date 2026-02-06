@@ -22,6 +22,14 @@
     <select id="getUserByPhone" resultType="com.nei10u.tip.model.User">
         SELECT * FROM users WHERE phone = #{phone}
     </select>
+
+    <select id="getUserByPddPid" resultType="com.nei10u.tip.model.User">
+        SELECT * FROM users WHERE pdd_pid = #{pddPid}
+    </select>
+
+    <select id="getUserByJdAuthId" resultType="com.nei10u.tip.model.User">
+        SELECT * FROM users WHERE jd_auth_id = #{jdAuthId} LIMIT 1
+    </select>
     
     <select id="getUserByToken" resultType="com.nei10u.tip.model.User">
         SELECT * FROM users WHERE token = #{token} LIMIT 1

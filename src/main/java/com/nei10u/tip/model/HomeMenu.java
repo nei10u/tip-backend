@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 每个菜单项包含图标、标签和点击动作。
  */
 @Data // Lombok 注解：自动生成 Getter, Setter, toString, equals, hashCode 等样板代码
-@TableName("home_menu") // MyBatis Plus 注解：建立实体类与数据库表 home_menu 的映射关系
+@TableName("public.home_menu") // 明确绑定 public schema，避免 search_path 造成读写漂移
 public class HomeMenu {
 
     /**

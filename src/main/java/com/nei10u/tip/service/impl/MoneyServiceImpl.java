@@ -40,6 +40,8 @@ public class MoneyServiceImpl implements MoneyService {
     @Override
     @Transactional
     public int updateBalance(String userId, Double amount) {
+        // 确保资金账户存在；订单结算/冲账可能早于前端首次查询钱包
+        getMoneyByUserId(userId);
         return moneyMapper.updateBalance(userId, amount);
     }
 

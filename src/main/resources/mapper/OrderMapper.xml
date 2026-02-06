@@ -4,12 +4,13 @@
 <mapper namespace="com.nei10u.tip.mapper.OrderMapper">
     
     <select id="getOrdersByUserId" resultType="com.nei10u.tip.model.Order">
-        SELECT * FROM orders WHERE sid = #{sid} ORDER BY create_time DESC
+        SELECT * FROM orders WHERE user_id = #{userId}
+        ORDER BY create_time DESC
     </select>
     
     <select id="getOrdersByStatus" resultType="com.nei10u.tip.model.Order">
         SELECT * FROM orders 
-        WHERE sid = #{sid} 
+        WHERE user_id = #{userId}
         AND order_status IN
         <foreach collection="statusList" item="status" open="(" separator="," close=")">
             #{status}
@@ -22,27 +23,49 @@
     </select>
     
     <insert id="insertOrUpdateBatch">
-        INSERT INTO orders (order_sn, ds_order_sn, order_title, img, sid, type_no, type_name,
+        INSERT INTO orders (order_sn, ds_order_sn, order_title, img, user_id, sid, relation_id, special_id, adzone_id, type_no, type_name,
                            union_platform,
                            order_price, pay_price, share_rate, share_fee,
+                           credited_fee,
                            gross_share_fee, base_deduction_rate, base_deduction_fee,
                            platform_profit_rate, platform_profit_fee, user_discount, order_discount,
                            order_status,
-                           status_content, create_time, pay_time, update_time)
+                           order_real_status, refund_status, order_lock, punish_reason,
+                           status_content, create_time, pay_time, earn_time, modify_time, pay_month, estimate_date, update_time)
         VALUES
         <foreach collection="orders" item="order" separator=",">
             (#{order.orderSn}, #{order.dsOrderSn}, #{order.orderTitle}, #{order.img}, 
-             #{order.sid}, #{order.typeNo}, #{order.typeName},
+             #{order.userId}, #{order.sid}, #{order.relationId}, #{order.specialId}, #{order.adzoneId}, #{order.typeNo}, #{order.typeName},
              #{order.unionPlatform},
              #{order.orderPrice}, #{order.payPrice}, #{order.shareRate}, #{order.shareFee},
+             #{order.creditedFee},
              #{order.grossShareFee}, #{order.baseDeductionRate}, #{order.baseDeductionFee},
              #{order.platformProfitRate}, #{order.platformProfitFee}, #{order.userDiscount}, #{order.orderDiscount},
              #{order.orderStatus},
-             #{order.statusContent}, #{order.createTime}, #{order.payTime}, #{order.updateTime})
+             #{order.orderRealStatus}, #{order.refundStatus}, #{order.orderLock}, #{order.punishReason},
+             #{order.statusContent}, #{order.createTime}, #{order.payTime}, #{order.earnTime}, #{order.modifyTime}, #{order.payMonth}, #{order.estimateDate}, #{order.updateTime})
         </foreach>
         ON CONFLICT (order_sn) DO UPDATE SET
+            user_id = EXCLUDED.user_id,
+            order_title = EXCLUDED.order_title,
+            img = EXCLUDED.img,
+            sid = EXCLUDED.sid,
+            relation_id = EXCLUDED.relation_id,
+            special_id = EXCLUDED.special_id,
+            adzone_id = EXCLUDED.adzone_id,
+            union_platform = EXCLUDED.union_platform,
+            type_no = EXCLUDED.type_no,
+            type_name = EXCLUDED.type_name,
+            order_price = EXCLUDED.order_price,
+            pay_price = EXCLUDED.pay_price,
+            share_rate = EXCLUDED.share_rate,
             order_status = EXCLUDED.order_status,
+            order_real_status = EXCLUDED.order_real_status,
+            refund_status = EXCLUDED.refund_status,
+            order_lock = EXCLUDED.order_lock,
+            punish_reason = EXCLUDED.punish_reason,
             share_fee = EXCLUDED.share_fee,
+            credited_fee = COALESCE(EXCLUDED.credited_fee, orders.credited_fee),
             gross_share_fee = EXCLUDED.gross_share_fee,
             base_deduction_rate = EXCLUDED.base_deduction_rate,
             base_deduction_fee = EXCLUDED.base_deduction_fee,
@@ -50,12 +73,18 @@
             platform_profit_fee = EXCLUDED.platform_profit_fee,
             user_discount = EXCLUDED.user_discount,
             order_discount = EXCLUDED.order_discount,
+            pay_time = EXCLUDED.pay_time,
+            earn_time = EXCLUDED.earn_time,
+            modify_time = EXCLUDED.modify_time,
+            pay_month = EXCLUDED.pay_month,
+            estimate_date = EXCLUDED.estimate_date,
+            status_content = EXCLUDED.status_content,
             update_time = EXCLUDED.update_time
     </insert>
 
     <select id="countOrdersByStatus" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM orders 
-        WHERE sid = #{sid} 
+        WHERE user_id = #{userId}
         <if test="statusList != null and statusList.size() > 0">
             AND order_status IN
             <foreach collection="statusList" item="status" open="(" separator="," close=")">
@@ -66,7 +95,7 @@
 
     <select id="sumShareFeeByStatus" resultType="java.lang.Double">
         SELECT COALESCE(SUM(share_fee), 0) FROM orders 
-        WHERE sid = #{sid} 
+        WHERE user_id = #{userId}
         <if test="statusList != null and statusList.size() > 0">
             AND order_status IN
             <foreach collection="statusList" item="status" open="(" separator="," close=")">
@@ -74,4 +103,45 @@
             </foreach>
         </if>
     </select>
+
+    <!-- 按 payMonth 计算“应结算/待入账”金额（排除失效/锁单）；refund_status=101 代表维权中，通常仍可展示但这里选择排除 -->
+    <select id="sumReceivableByPayMonth" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(share_fee), 0)
+        FROM orders
+        WHERE user_id = #{userId}
+          AND pay_month = #{payMonth}
+          AND (order_status IS NULL OR order_status != 3)
+          AND (order_lock IS NULL OR order_lock != 1)
+          AND (refund_status IS NULL OR refund_status != 101)
+    </select>
+
+    <select id="sumToBeReceiveAfterPayMonth" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(share_fee), 0)
+        FROM orders
+        WHERE user_id = #{userId}
+          AND pay_month IS NOT NULL
+          AND pay_month &gt; #{payMonth}
+          AND (order_status IS NULL OR order_status != 3)
+          AND (order_lock IS NULL OR order_lock != 1)
+          AND (refund_status IS NULL OR refund_status != 101)
+    </select>
+
+    <select id="sumCreditedFee" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(credited_fee), 0)
+        FROM orders
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="backfillOrderUserId">
+        UPDATE orders o
+        SET user_id = u.id
+        FROM users u
+        WHERE o.user_id IS NULL
+          AND (
+            (u.relation_id IS NOT NULL AND o.sid = u.relation_id::text)
+            OR (u.special_id IS NOT NULL AND o.sid = u.special_id::text)
+            OR (u.pdd_pid IS NOT NULL AND o.sid = u.pdd_pid)
+            OR (u.union_id IS NOT NULL AND o.sid = u.union_id)
+          )
+    </update>
 </mapper>

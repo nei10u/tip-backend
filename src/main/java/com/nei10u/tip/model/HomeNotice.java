@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 对应数据库表 home_notice，用于存储首页滚动的文本公告。
  */
 @Data
-@TableName("home_notice")
+@TableName("public.home_notice") // 明确绑定 public schema，避免 search_path 造成读写漂移
 public class HomeNotice {
 
     @TableId(type = IdType.AUTO)

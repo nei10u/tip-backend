@@ -2,7 +2,8 @@ package com.nei10u.tip.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nei10u.tip.dto.OrderDto;
-import com.nei10u.tip.ordersync.core.OrderSyncCoordinator;
+import com.nei10u.tip.ordersync.tb.TbOrderSyncService;
+import com.nei10u.tip.ordersync.tb.TbSyncType;
 import com.nei10u.tip.service.OrderService;
 import com.nei10u.tip.vo.ResponseVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +28,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @Autowired
-    private OrderSyncCoordinator orderSyncCoordinator;
+    private TbOrderSyncService tbOrderSyncService;
 
     @Operation(summary = "获取订单列表")
     @GetMapping("/list")
@@ -59,7 +60,7 @@ public class OrderController {
     @GetMapping("/sync/minutely")
     public ResponseVO<Integer> startSyncOrdersMinutely() {
         LocalDateTime oneHourAgo = LocalDateTime.now().plusHours(1);
-        int count = orderSyncCoordinator.syncRange(LocalDateTime.now(), oneHourAgo);
+        int count = tbOrderSyncService.syncRange(LocalDateTime.now(), oneHourAgo, TbSyncType.DAY);
         return ResponseVO.success(count);
     }
 }

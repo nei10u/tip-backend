@@ -6,9 +6,13 @@ spring:
 #    url: jdbc:postgresql://localhost:5432/tip
 #    username: postgres
 #    password: mac_user1234
-    url: jdbc:postgresql://dpg-d514l5dactks73f1felg-a/tip_postgres
-    username: tip_postgres_user
-    password: qL93OQfLjsEMrnAmVz1T9ina34RxNE74
+    url: jdbc:postgresql://root:S5v4pEbqi98ougPNTZ1C20c7Wy36aRQX@43.134.116.141:31269/zeabur
+    username: root
+    password: S5v4pEbqi98ougPNTZ1C20c7Wy36aRQX
+# onRender
+#    url: jdbc:postgresql://dpg-d514l5dactks73f1felg-a/tip_postgres
+#    username: tip_postgres_user
+#    password: qL93OQfLjsEMrnAmVz1T9ina34RxNE74
 
 
     driver-class-name: org.postgresql.Driver
@@ -17,6 +21,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:sql/schema.sql
+#      data-locations: classpath:sql/data.sql
 
   task:
     scheduling:
@@ -35,10 +40,19 @@ server:
 
 # DTK API配置
 app:
+  cms:
+    # tip-cms 后端地址（tip-backend 作为配置网关拉取并缓存）
+    base-url: "http://localhost:18090"
+    # CMS 发布到 tip-backend 时的简单鉴权 key（为空表示不校验）
+    publish-key: ""
+    # CMS 前端 dev server（用于 CORS）
+    allowed-origins: "http://localhost:5173"
+    # 返利页配置需要刷新的平台列表（发布 rebate_pages 时批量刷新）
+    rebate-platform-codes: "tb,jd,pdd,vip"
   dtk:
     app-key: 6936f422c3a79
     app-secret: b8f60d673b879482b88f21d9e6798df3
-    pid: mm_123_456_789
+    pid: mm_86252974_3379850294_116201950254
 
   wechat:
     miniapp:
@@ -49,25 +63,84 @@ app:
 
   # ZTK API配置 (唯品会)
   ztk:
-    api-key: your_ztk_api_key
-    sid: your_ztk_sid
+    api-key: a902b9b16bd843428242de125fcf033f
+    sid: 188087
+    # 淘宝高佣转链（open_gaoyongzhuanlian.ashx）所需 PID；不填则回退到 app.dtk.pid
+    tb-pid: mm_86252974_3379850294_116201950254
 
-  # 本站盈利/分成规则（配置驱动）
-  profit:
-    default-rule:
-      rule-id: default
-      base-deduction-rate: 0.0
-      platform-profit-rate: 0.02
-      user-share-rate: 1.0
-    rules:
-      # 示例：淘宝（DTK）存在固定扣点 0.1 + 平台盈利 0.05，净额全给用户
-      - rule-id: dtk_tb_2025_09_24
-        union-platform: DTK
-        ecommerce-platform: TB
-        effective-from: 2025-09-24T00:00:00
-        base-deduction-rate: 0.10
-        platform-profit-rate: 0.05
-        user-share-rate: 1.0
+  jtk:
+    api-key: qaanYSYcSHal8ccTKG1dMvkIX2IlMSEm
+    pub-id: 445564
+
+  # VEAPI 转链（legacy: http://api.veapi.cn/tbk/generalconvert）
+  veapi:
+    # 为空表示不启用 veapi 转链兜底
+    key: ""
+    account-id: ""
+    promotion-type: "2"
+    detail: "2"
+
+  # 好京客（蚂蚁星球）开放平台
+  hjk:
+    api-key: 03806fb931bf89af
+
+  # 京东联盟
+  jd:
+    # 联盟ID
+    union-id: 2037831861
+
+  # 淘宝开放平台订单同步（仅 TB 分佣阶段）
+  # gateway 固定为 https://eco.taobao.com/router/rest
+  tb:
+    gateway: https://eco.taobao.com/router/rest
+    app-key: ""
+    app-secret: ""
+    # 若接口需要授权 session（淘宝 top session），填这里；不需要可留空
+    session: ""
+
+    # 淘宝 OAuth 授权（用于绑定淘宝账号并获取 specialId/relationId）
+    oauth:
+      authorize-url: "https://oauth.taobao.com/authorize"
+      # 回调地址必须在淘宝开放平台后台配置白名单
+      redirect-uri: "http://localhost:8080/api/tb/oauth/callback"
+      # 渠道邀请码/推广位归属（与 legacy: 9LAIPM 对齐；按实际替换）
+      inviter-code: "9LAIPM"
+      # 备注（与 legacy: Q7V3MJ 对齐；按实际替换）
+      note: "Q7V3MJ"
+      # state 有效期（秒）
+      state-ttl-seconds: 600
+      # 结果有效期（秒）
+      result-ttl-seconds: 1800
+      # infoType（通常 1）
+      info-type: 1
+
+    # TB 定时任务开关与参数（对齐 legacy scheduler 行为；默认关闭，避免新环境误触发全量回溯）
+    scheduler:
+      enabled: false
+      back-fill-days: 90
+      slice-minutes: 20
+      refund-days: 60
+      punish-page-size: 100
+
+    # 淘宝订单查询（taobao.tbk.order.details.get）参数优化
+    # 参考文档： https://open.taobao.com/api.htm?docId=43328&docType=2&scopeId=16175
+    order:
+      # 单次查询窗口最大分钟数（legacy 以 20 分钟切片；如需可改 30）
+      max-window-minutes: 20
+      page-size: 100
+      # fields 建议按最小集配置，避免字段变更影响映射
+      fields: "trade_id,tk_status,refund_tag,pub_share_fee,pub_share_pre_fee,adzone_id,relation_id,special_id,tk_paid_time,tk_create_time,tk_earning_time,tk_modified_time,item_title,item_img,alipay_total_price,pay_price,deposit_price,item_id"
+
+  # 本地商品库同步参数（TB 数据域）
+  goods:
+    sync:
+      tb:
+        # MyBatis batch 提交大小
+        batch-size: 300
+        # 单实例互斥锁（同一 JVM 内避免并发跑同步任务）
+        lock-enabled: true
+        # tryLock 超时（毫秒）；0 表示立即尝试，失败则跳过
+        lock-timeout-ms: 0
 
 # Swagger/OpenAPI
 springdoc:

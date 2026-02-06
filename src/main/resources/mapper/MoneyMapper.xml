@@ -10,7 +10,7 @@
     <update id="updateBalance">
         UPDATE money 
         SET balance = balance + #{amount},
-            total_income = total_income + #{amount},
+            total_income = total_income + (CASE WHEN #{amount} &gt; 0 THEN #{amount} ELSE 0 END),
             update_time = NOW()
         WHERE user_id = #{userId}
     </update>

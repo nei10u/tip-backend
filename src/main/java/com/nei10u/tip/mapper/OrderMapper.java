@@ -18,13 +18,13 @@ public interface OrderMapper extends BaseMapper<Order> {
     /**
      * 根据用户ID分页查询订单
      */
-    IPage<Order> getOrdersByUserId(Page<?> page, @Param("sid") String sid);
+    IPage<Order> getOrdersByUserId(Page<?> page, @Param("userId") Long userId);
 
     /**
      * 根据用户ID和状态查询订单
      */
     IPage<Order> getOrdersByStatus(Page<?> page,
-            @Param("sid") String sid,
+            @Param("userId") Long userId,
             @Param("statusList") List<Byte> statusList);
 
     /**
@@ -40,10 +40,30 @@ public interface OrderMapper extends BaseMapper<Order> {
     /**
      * 统计订单数量
      */
-    Integer countOrdersByStatus(@Param("sid") String sid, @Param("statusList") List<Byte> statusList);
+    Integer countOrdersByStatus(@Param("userId") Long userId, @Param("statusList") List<Byte> statusList);
 
     /**
      * 统计预估佣金
      */
-    Double sumShareFeeByStatus(@Param("sid") String sid, @Param("statusList") List<Byte> statusList);
+    Double sumShareFeeByStatus(@Param("userId") Long userId, @Param("statusList") List<Byte> statusList);
+
+    /**
+     * 按 payMonth 汇总预计可入账金额（排除失效/锁单/维权中）。
+     */
+    Double sumReceivableByPayMonth(@Param("userId") Long userId, @Param("payMonth") String payMonth);
+
+    /**
+     * 汇总 payMonth 大于指定 key 的预计可入账金额（排除失效/锁单/维权中）。
+     */
+    Double sumToBeReceiveAfterPayMonth(@Param("userId") Long userId, @Param("payMonth") String payMonth);
+
+    /**
+     * 汇总已入账金额（订单维度）。
+     */
+    Double sumCreditedFee(@Param("userId") Long userId);
+
+    /**
+     * 回填历史订单 user_id（通过 orders.sid 匹配 users.relation_id/special_id/pdd_pid/union_id）
+     */
+    int backFillOrderUserId();
 }

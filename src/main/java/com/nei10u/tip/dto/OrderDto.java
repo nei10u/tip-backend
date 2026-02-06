@@ -10,6 +10,7 @@ import java.util.Date;
 public class OrderDto {
 
     private Long id;
+    private Long userId;
     private String orderSn;
     private String dsOrderSn;
     private String orderTitle;

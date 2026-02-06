@@ -39,6 +39,16 @@ public interface UserService {
     UserDto getUserByUnionId(String unionId);
 
     /**
+     * 根据拼多多PID获取用户
+     */
+    UserDto getUserByPddPid(String pddPid);
+
+    /**
+     * 根据京东授权/绑定ID获取用户
+     */
+    UserDto getUserByJdAuthId(String jdAuthId);
+
+    /**
      * 根据手机号获取用户
      */
     UserDto getUserByPhone(String phone);

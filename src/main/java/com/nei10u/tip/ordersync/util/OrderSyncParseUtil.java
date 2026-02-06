@@ -101,6 +101,39 @@ public final class OrderSyncParseUtil {
     }
 
     /**
+     * 尝试从 JSON 对象中获取第一个有效（>=0）的浮点数值。
+     * <p>
+     * 适用于“回退佣金/退款金额”这类字段：0 也是有意义的合法值。
+     * </p>
+     */
+    public static Double firstNonNegativeDouble(JSONObject obj, String... keys) {
+        if (obj == null || keys == null)
+            return null;
+        for (String k : keys) {
+            try {
+                if (!StringUtils.hasText(k))
+                    continue;
+                Object raw = obj.get(k);
+                if (raw == null)
+                    continue;
+                double v;
+                if (raw instanceof Number) {
+                    v = ((Number) raw).doubleValue();
+                } else {
+                    String s = raw.toString();
+                    if (!StringUtils.hasText(s))
+                        continue;
+                    v = Double.parseDouble(s);
+                }
+                if (v >= 0)
+                    return v;
+            } catch (Exception ignore) {
+            }
+        }
+        return null;
+    }
+
+    /**
      * 安全解析日期时间字符串。
      * <p>
      * 优先尝试 standard pattern (yyyy-MM-dd HH:mm:ss)，

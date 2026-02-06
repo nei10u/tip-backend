@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nei10u.tip.mapper.TbOrderRefundMapper">
+
+    <insert id="upsert">
+        INSERT INTO tb_order_refund (trade_id, order_sn, raw_json, create_time, update_time)
+        VALUES (#{r.tradeId}, #{r.orderSn}, #{r.rawJson}, #{r.createTime}, #{r.updateTime})
+        ON CONFLICT (trade_id) DO UPDATE SET
+            order_sn = EXCLUDED.order_sn,
+            raw_json = EXCLUDED.raw_json,
+            update_time = EXCLUDED.update_time
+    </insert>
+
+</mapper>
+
+

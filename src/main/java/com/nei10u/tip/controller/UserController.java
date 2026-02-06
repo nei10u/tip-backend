@@ -2,7 +2,9 @@ package com.nei10u.tip.controller;
 
 import com.nei10u.tip.dto.UserDto;
 import com.nei10u.tip.model.User;
+import com.nei10u.tip.service.RealNameService;
 import com.nei10u.tip.service.UserService;
+import com.nei10u.tip.service.WechatService;
 import com.nei10u.tip.vo.ResponseVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,9 +26,9 @@ public class UserController {
     // 依赖注入：用户业务服务
     private final UserService userService;
     // 依赖注入：微信服务（处理与微信服务器的交互）
-    private final com.nei10u.tip.service.WechatService wechatService;
+    private final WechatService wechatService;
     // 依赖注入：实名认证服务
-    private final com.nei10u.tip.service.RealNameService realNameService;
+    private final RealNameService realNameService;
 
     /**
      * 用户注册接口

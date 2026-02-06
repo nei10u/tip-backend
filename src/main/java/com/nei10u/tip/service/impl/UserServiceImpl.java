@@ -68,6 +68,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDto getUserByPddPid(String pddPid) {
+        if (!org.springframework.util.StringUtils.hasText(pddPid)) {
+            return null;
+        }
+        User user = userMapper.getUserByPddPid(pddPid);
+        return convertToDto(user);
+    }
+
+    @Override
+    public UserDto getUserByJdAuthId(String jdAuthId) {
+        if (!org.springframework.util.StringUtils.hasText(jdAuthId)) {
+            return null;
+        }
+        User user = userMapper.getUserByJdAuthId(jdAuthId);
+        return convertToDto(user);
+    }
+
+    @Override
     public UserDto getUserByPhone(String phone) {
         User user = userMapper.getUserByPhone(phone);
         return convertToDto(user);
@@ -120,12 +138,9 @@ public class UserServiceImpl implements UserService {
                 user.setPddStatus(true);
                 break;
             case "jd":
-                // 京东逻辑待定，暂存 specialId 字段或新增字段
-                try {
-                    user.setSpecialId(Long.parseLong(authId));
-                } catch (NumberFormatException e) {
-                    // ignore or throw
-                }
+                // 京东：使用独立字段存储（避免与 TB specialId 冲突）
+                user.setJdAuthId(authId);
+                user.setJdStatus(true);
                 break;
             default:
                 throw new BusinessException("INVALID_PLATFORM", "不支持的平台");
@@ -184,12 +199,22 @@ public class UserServiceImpl implements UserService {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
         dto.setNickname(user.getNickname());
+        dto.setAvatarUrl(user.getAvatarUrl());
         dto.setPhone(user.getPhone());
+        dto.setEmail(user.getEmail());
         dto.setRelationId(user.getRelationId());
         dto.setSpecialId(user.getSpecialId());
         dto.setTbUserId(user.getTbUserId());
         dto.setPddPid(user.getPddPid());
+        dto.setJdAuthId(user.getJdAuthId());
         dto.setUnionId(user.getUnionId());
+        dto.setMpStatus(user.getMpStatus());
+        dto.setPddStatus(user.getPddStatus());
+        dto.setJdStatus(user.getJdStatus());
+        dto.setStatus(user.getStatus());
+        dto.setUserDiscount(user.getUserDiscount());
+        dto.setTotalActualFee(user.getTotalActualFee());
+        dto.setFrozenFee(user.getFrozenFee());
         return dto;
     }
 }

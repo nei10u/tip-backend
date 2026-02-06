@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 使用 MyBatis Plus 进行 ORM 映射。
  */
 @Data // Lombok 注解：自动生成 Getter, Setter, toString, equals, hashCode 方法，简化代码
-@TableName("home_banner") // MyBatis Plus 注解：指定该实体类对应的数据库表名为 home_banner
+@TableName("public.home_banner") // 明确绑定 public schema，避免 search_path 造成读写漂移
 public class HomeBanner {
 
     /**

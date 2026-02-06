@@ -58,6 +58,25 @@ public class User {
     private String pddPid;
 
     // ==========================================
+    // 京东联盟字段（独立于 TB）
+    // ==========================================
+
+    /**
+     * 京东 CPS 授权/绑定 ID（项目侧自定义存储）
+     * <p>
+     * 说明：不同接入方可能使用 unionId / 授权key / positionId 等作为“归因/绑定标识”。
+     * 这里统一存为字符串，供转链/校验授权使用。
+     */
+    @TableField("jd_auth_id")
+    private String jdAuthId;
+
+    /**
+     * 京东绑定状态
+     */
+    @TableField("jd_status")
+    private Boolean jdStatus;
+
+    // ==========================================
     // 微信生态字段
     // ==========================================
 
@@ -103,6 +122,7 @@ public class User {
      * 支付宝账号
      * 用于提现打款。
      */
+    @TableField("alipay_uid")
     private String aliPayAccount;
 
     /**
@@ -115,6 +135,7 @@ public class User {
      * 身份证姓名
      * 实名认证字段。
      */
+    @TableField("real_name")
     private String idCardName;
 
     /**
@@ -132,6 +153,11 @@ public class User {
      * 用户唯一标识之一，用于短信验证码登录/通知。
      */
     private String phone;
+
+    /**
+     * 邮箱（可选）
+     */
+    private String email;
 
     /**
      * 登录 Token
@@ -186,6 +212,7 @@ public class User {
 
     /**
      * 创建时间
+     * 
      * @TableField(fill = FieldFill.INSERT) - MyBatis Plus 自动填充
      */
     @TableField(fill = FieldFill.INSERT)
@@ -193,6 +220,7 @@ public class User {
 
     /**
      * 更新时间
+     * 
      * @TableField(fill = FieldFill.INSERT_UPDATE) - MyBatis Plus 自动填充
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)

@@ -1,11 +1,11 @@
 package com.nei10u.tip.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nei10u.tip.dto.OrderDto;
 import com.nei10u.tip.mapper.OrderMapper;
 import com.nei10u.tip.model.Order;
-import com.nei10u.tip.service.MoneyService;
 import com.nei10u.tip.service.OrderService;
 import com.nei10u.tip.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 订单服务实现类
@@ -28,12 +31,14 @@ public class OrderServiceImpl implements OrderService {
 
     private final UserService userService;
 
-    private final MoneyService moneyService;
-
     @Override
     public IPage<OrderDto> getOrders(int page, String userId) {
         Page<Order> pageParam = new Page<>(page, 20);
-        IPage<Order> orderPage = orderMapper.getOrdersByUserId(pageParam, userId);
+        Long uid = parseUserId(userId);
+        if (uid == null) {
+            return new Page<OrderDto>(page, 20, 0);
+        }
+        IPage<Order> orderPage = orderMapper.getOrdersByUserId(pageParam, uid);
 
         return orderPage.convert(this::convertToDto);
     }
@@ -41,7 +46,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public IPage<OrderDto> getOrdersByStatus(int page, String userId, List<Byte> statusList) {
         Page<Order> pageParam = new Page<>(page, 20);
-        IPage<Order> orderPage = orderMapper.getOrdersByStatus(pageParam, userId, statusList);
+        Long uid = parseUserId(userId);
+        if (uid == null) {
+            return new Page<OrderDto>(page, 20, 0);
+        }
+        IPage<Order> orderPage = orderMapper.getOrdersByStatus(pageParam, uid, statusList);
 
         return orderPage.convert(this::convertToDto);
     }
@@ -55,50 +64,38 @@ public class OrderServiceImpl implements OrderService {
 
         // 1. 查询库中已存在的订单 (Status Change Detection)
         List<String> orderSns = orders.stream().map(Order::getOrderSn).toList();
-        List<Order> existingOrders = orderMapper.selectBatchIds(
-                orders.stream().map(Order::getOrderSn).collect(java.util.stream.Collectors.toList()));
-        // Notice: Order ID is primary key 'id' not 'orderSn'. existingOrders lookup by
-        // ID set won't work if I pass SNs.
-        // Wait, OrderMapper usually doesn't have selectBatchIds by SN unless I added it
-        // or I query wrapper.
-        // Order entity primary key is Long id. I cannot use selectBatchIds with orderSn
-        // string.
-        // I need to use a Wrapper query:
-        // orderMapper.selectList(Wrappers.<Order>lambdaQuery().in(Order::getOrderSn,
-        // orderSns));
+        // 注意：Order 主键是 Long id，不能用 selectBatchIds 传 orderSn（String）。
+        // 这里改用条件查询按 orderSn 批量拉取已有订单。
 
         List<Order> existingList = orderMapper
-                .selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Order>()
-                        .in(Order::getOrderSn, orderSns));
+                .selectList(new LambdaQueryWrapper<Order>().in(Order::getOrderSn, orderSns));
 
-        java.util.Map<String, Order> existingMap = existingList.stream()
-                .collect(java.util.stream.Collectors.toMap(Order::getOrderSn, o -> o, (a, b) -> a));
+        Map<String, Order> existingMap = existingList.stream()
+                .collect(Collectors.toMap(Order::getOrderSn, o -> o, (a, b) -> a));
 
         // 2. 批量查找用户 (sid -> userId)
         // 这一步比较耗时，可以选择缓存或批量查询优化。
         // 这里简单遍历处理，因为 orders 批次通常仅 100 条。
 
         for (Order newOrder : orders) {
-            String sid = newOrder.getSid();
             // TODO: 解析 sid 对应的 User (关联 ID 或 专享 ID)
             // 这里假设 sid 主要是 relationId (淘宝) 或 pddPid (拼多多)
             // 简单逻辑：尝试查找用户。
 
-            String userId = resolveUserId(newOrder);
+            Long resolvedUserId = resolveUserId(newOrder);
+            if (resolvedUserId != null) {
+                newOrder.setUserId(resolvedUserId);
+            }
 
             Order oldOrder = existingMap.get(newOrder.getOrderSn());
             // 如果是更新，保留部分不应变的字段(如主键ID)
             if (oldOrder != null) {
                 newOrder.setId(oldOrder.getId());
-                // 状态变更逻辑
-                if (userId != null) {
-                    processStatusChange(userId, oldOrder, newOrder);
+                // 若历史数据已有 userId，优先保留（避免解析失败覆盖为 null）
+                if (newOrder.getUserId() == null) {
+                    newOrder.setUserId(oldOrder.getUserId());
                 }
-            } else {
-                // 新订单，如果直接是结算状态（极少见），也应发放
-                if (userId != null && isSettled(newOrder)) {
-                    addIncome(userId, newOrder);
-                }
+                // 新订单：仅同步落库；结算/入账由独立的结算任务处理
             }
         }
 
@@ -108,7 +105,19 @@ public class OrderServiceImpl implements OrderService {
         return count;
     }
 
-    private String resolveUserId(Order order) {
+    private Long resolveUserId(Order order) {
+        if (order == null) return null;
+
+        // 1) TB 优先走拆分字段（更可审计，且避免 sid 混合口径）
+        if (order.getRelationId() != null) {
+            com.nei10u.tip.dto.UserDto user = userService.getUserByRelationId(order.getRelationId());
+            if (user != null) return user.getId();
+        }
+        if (order.getSpecialId() != null) {
+            com.nei10u.tip.dto.UserDto user = userService.getUserBySpecialId(order.getSpecialId());
+            if (user != null) return user.getId();
+        }
+
         // 简单策略：根据 sid 查 User
         // 实际业务中 sid 可能是 relationId(Long) 也可能是 String
         if (!org.springframework.util.StringUtils.hasText(order.getSid()))
@@ -118,67 +127,32 @@ public class OrderServiceImpl implements OrderService {
             Long relationId = Long.parseLong(order.getSid());
             com.nei10u.tip.dto.UserDto user = userService.getUserByRelationId(relationId);
             if (user != null)
-                return String.valueOf(user.getId());
+                return user.getId();
 
             // 尝试当作 specialId
             user = userService.getUserBySpecialId(relationId);
             if (user != null)
-                return String.valueOf(user.getId());
+                return user.getId();
         } catch (NumberFormatException e) {
-            // 解析失败，可能是 pddPid (String)
-            // 需要 userService 支持 pddPid 查询，暂略
+            // 解析失败，可能是 pddPid / unionId 等字符串
+            com.nei10u.tip.dto.UserDto user = userService.getUserByPddPid(order.getSid());
+            if (user != null) return user.getId();
+            // 京东：可能写入 jdAuthId（字符串）
+            user = userService.getUserByJdAuthId(order.getSid());
+            if (user != null) return user.getId();
+            user = userService.getUserByUnionId(order.getSid());
+            if (user != null) return user.getId();
         }
         return null;
     }
 
-    private void processStatusChange(String userId, Order oldOrder, Order newOrder) {
-        boolean oldSettled = isSettled(oldOrder);
-        boolean newSettled = isSettled(newOrder);
-        boolean newInvalid = isInvalid(newOrder);
-
-        // 结算：从非结算 -> 结算
-        if (!oldSettled && newSettled) {
-            addIncome(userId, newOrder);
+    private Long parseUserId(String userId) {
+        if (!StringUtils.hasText(userId)) return null;
+        try {
+            return Long.parseLong(userId);
+        } catch (NumberFormatException e) {
+            return null;
         }
-        // 冲账：从已结算 -> 失效
-        else if (oldSettled && newInvalid) {
-            chargeback(userId, newOrder); // 冲账使用 newOrder 的金额
-        }
-    }
-
-    private boolean isSettled(Order order) {
-        // 2-已结算
-        return order.getOrderStatus() != null && order.getOrderStatus() == 2;
-    }
-
-    private boolean isInvalid(Order order) {
-        // 3-已失效
-        return order.getOrderStatus() != null && order.getOrderStatus() == 3;
-    }
-
-    private void addIncome(String userId, Order order) {
-        Double fee = calculateUserFee(order);
-        if (fee > 0) {
-            moneyService.updateBalance(userId, fee);
-            log.info("Order Settled: sn={}, userId={}, fee={}", order.getOrderSn(), userId, fee);
-        }
-    }
-
-    private void chargeback(String userId, Order order) {
-        Double fee = calculateUserFee(order);
-        if (fee > 0) {
-            moneyService.updateBalance(userId, -fee); // 扣减余额
-            log.info("Order Chargeback: sn={}, userId={}, fee={}", order.getOrderSn(), userId, -fee);
-        }
-    }
-
-    private Double calculateUserFee(Order order) {
-        if (order.getShareFee() == null)
-            return 0.0;
-        // 注意：ShareFee 已经是 "预估佣金"，是否还需要乘 userDiscount 取决于 ShareFee 的定义。
-        // TbEcommerceOrderMapper 中: order.setShareFee(breakdown.getUserEstimateFee());
-        // 说明 ShareFee 已经是用户预估到手金额了。
-        return order.getShareFee();
     }
 
     @Override

@@ -13,6 +13,10 @@ public class PromotionInfo {
 
     private String goodsId;
     private String platform; // tb, jd, pdd, vip
+
+    /** 分享链路外部标识（用于写入联盟转链 externalId 等参数） */
+    private String externalId;
+
     private String promotionUrl;
     private Long userId;
 
