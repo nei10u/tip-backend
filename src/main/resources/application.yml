@@ -6,7 +6,7 @@ spring:
 #    url: jdbc:postgresql://localhost:5432/tip
 #    username: postgres
 #    password: mac_user1234
-    url: jdbc:postgresql://root:S5v4pEbqi98ougPNTZ1C20c7Wy36aRQX@postgresql.zeabur.internal/zeabur
+    url: jdbc:postgresql://postgresql.zeabur.internal/zeabur
     username: root
     password: S5v4pEbqi98ougPNTZ1C20c7Wy36aRQX
 # onRender
