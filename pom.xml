@@ -24,8 +24,7 @@
         <fastjson.version>2.0.43</fastjson.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <taobao.sdk.jar>${project.basedir}/lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar
-        </taobao.sdk.jar>
+        <taobao.sdk.jar>${project.basedir}/lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar</taobao.sdk.jar>
     </properties>
 
     <repositories>
