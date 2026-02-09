@@ -11,7 +11,6 @@
         <version>3.2.3</version>
     </parent>
 
-
     <groupId>com.nei10u</groupId>
     <artifactId>tip-backend</artifactId>
     <version>1.0.0-SNAPSHOT</version>
@@ -34,14 +33,6 @@
         </repository>
     </repositories>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>aliyun</id>
-            <name>aliyun</name>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <dependencies>
         <!-- Spring Boot Web -->
         <dependency>
@@ -55,7 +46,6 @@
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>${mybatis-plus.version}</version>
             <exclusions>
-                <!-- Spring Boot 3.x / Spring Framework 6.x 需要 mybatis-spring 3.x；2.x 在 Spring 6.1 上可能触发 FactoryBean 元数据类型异常 -->
                 <exclusion>
                     <groupId>org.mybatis</groupId>
                     <artifactId>mybatis-spring</artifactId>
@@ -63,68 +53,63 @@
             </exclusions>
         </dependency>
 
-        <!-- MyBatis Spring (Spring Framework 6 兼容) -->
         <dependency>
             <groupId>org.mybatis</groupId>
             <artifactId>mybatis-spring</artifactId>
             <version>3.0.3</version>
         </dependency>
 
-        <!-- PostgreSQL Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- FastJSON -->
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>${fastjson.version}</version>
         </dependency>
 
-        <!-- Taobao Open Platform SDK (system scope, offline) -->
+        <!-- 【关键改动 1】本地 Jar 包引入 -->
+        <!-- 请务必确认 lib 下的文件名与 systemPath 中完全一致 -->
         <dependency>
             <groupId>com.taobao.sdk</groupId>
             <artifactId>taobao-open-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+            <scope>system</scope>
+            <!-- project.basedir 指向 pom.xml 所在的目录 -->
+            <systemPath>${project.basedir}/lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar</systemPath>
         </dependency>
 
-        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- WeChat Mini App -->
         <dependency>
             <groupId>com.github.binarywang</groupId>
             <artifactId>weixin-java-miniapp</artifactId>
             <version>4.5.0</version>
         </dependency>
 
-        <!-- Swagger/OpenAPI -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.2.0</version>
         </dependency>
 
-        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -134,33 +119,19 @@
 
     <build>
         <plugins>
+            <!-- Spring Boot 打包插件 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <execution>
-                        <id>install-taobao-sdk</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <configuration>
-                            <file>${project.basedir}/lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar</file>
-                            <groupId>com.taobao.sdk</groupId>
-                            <artifactId>taobao-open-sdk</artifactId>
-                            <version>0.0.1-SNAPSHOT</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                </executions>
+                <configuration>
+                    <!-- 【关键改动 2】允许打包 system scope 的依赖 -->
+                    <!-- 如果不加这一行，本地 jar 包不会被打进最终的 jar 里，运行时会报 ClassNotFound -->
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
             </plugin>
 
+            <!-- 【关键改动 3】已移除 maven-install-plugin -->
+            <!-- 之前报错就是因为它在依赖解析前执行不了，移除即可 -->
         </plugins>
     </build>
 
