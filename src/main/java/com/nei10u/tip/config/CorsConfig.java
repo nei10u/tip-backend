@@ -12,11 +12,7 @@ import java.util.stream.Collectors;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    /**
-     * 允许的前端 Origin（逗号分隔）
-     * 例：http://localhost:5173,http://127.0.0.1:5173
-     */
-    @Value("${app.cms.allowed-origins:http://localhost:5173}")
+    @Value("${app.cms.allowed-origins:https://tip-cms.zeabur.app,http://localhost:5173}")
     private String allowedOrigins;
 
     @Override
@@ -24,10 +20,19 @@ public class CorsConfig implements WebMvcConfigurer {
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
+                .toList();
 
+        // 需要跨域访问的路径都要加上
         registry.addMapping("/api/**")
-                .allowedOrigins(origins.toArray(new String[0]))
+                .allowedOriginPatterns(origins.toArray(new String[0]))
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .exposedHeaders("*")
+                .allowCredentials(false)
+                .maxAge(3600);
+
+        registry.addMapping("/tip-backend/**")
+                .allowedOriginPatterns(origins.toArray(new String[0]))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .exposedHeaders("*")
@@ -35,4 +40,3 @@ public class CorsConfig implements WebMvcConfigurer {
                 .maxAge(3600);
     }
 }
-
