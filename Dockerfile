@@ -1,38 +1,45 @@
-FROM docker.io/library/eclipse-temurin:17
-LABEL "language"="java"
-LABEL "framework"="spring-boot"
+# syntax=docker/dockerfile:1.6
 
-# 安装 Maven
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt update \
-    && apt-get --no-install-recommends install -y \
-    maven \
-    ca-certificates-java
+############################
+# 1️⃣ 构建阶段
+############################
+FROM maven:3.9-eclipse-temurin-17 AS build
+LABEL language="java"
+LABEL framework="spring-boot"
 
-WORKDIR /src
+WORKDIR /app
 
-# —————————————— 关键修改部分开始 ——————————————
-
-# 1. 先只复制 pom.xml 和 lib 目录
-# 目的：确保在运行 Maven 命令前，容器里的 /src/lib 目录下真实存在那个 jar 包
-# 且只要依赖不改，这一层缓存就能被复用，不用每次都重新下载依赖
+# —— ① 只复制 pom.xml（最大化依赖缓存）——
 COPY pom.xml .
+
+# 预下载依赖（强缓存层）
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B dependency:go-offline
+
+# —— ② 复制 lib 并安装本地 jar 到 Maven 仓库 ——
 COPY lib ./lib
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn install:install-file \
+      -DgroupId=com.taobao.sdk \
+      -DartifactId=taobao-open-sdk \
+      -Dversion=0.0.1 \
+      -Dpackaging=jar \
+      -Dfile=lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar
 
-# 2. (可选) 预下载依赖
-# 这一步会下载 internet 上的依赖，但本地 lib 的依赖已存在，所以不会报错
-RUN mvn dependency:go-offline -B || true
+# —— ③ 再复制源码（代码变动不影响依赖层）——
+COPY src ./src
 
-# 3. 复制剩余的所有源代码
-# 把这一步放在后面，因为代码改动最频繁
-COPY . .
+# 构建
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -DskipTests package
 
-# —————————————— 关键修改部分结束 ——————————————
 
-# 4. 执行构建
-# 建议使用 package 而非 install，Docker 容器内通常不需要安装到本地仓库
-RUN mvn clean package -Dmaven.test.skip=true
+############################
+# 2️⃣ 运行阶段（极小镜像）
+############################
+FROM eclipse-temurin:17-jre
+WORKDIR /app
 
-# 启动命令
-CMD java -Dserver.port=$PORT -jar target/*.jar
+COPY --from=build /app/target/*.jar app.jar
+
+CMD ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
