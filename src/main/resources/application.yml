@@ -44,7 +44,7 @@ app:
     # tip-cms 后端地址（tip-backend 作为配置网关拉取并缓存）
     base-url: "http://localhost:18090"
     # CMS 发布到 tip-backend 时的简单鉴权 key（为空表示不校验）
-    publish-key: ""
+    publish-key: "1234567890"
     # CMS 前端 dev server（用于 CORS）
     allowed-origins: "https://tip-cms.zeabur.app,http://localhost:5173"
     # 返利页配置需要刷新的平台列表（发布 rebate_pages 时批量刷新）
