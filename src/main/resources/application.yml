@@ -42,7 +42,7 @@ server:
 app:
   cms:
     # tip-cms 后端地址（tip-backend 作为配置网关拉取并缓存）
-    base-url: "https://tip-cms.zeabur.app,http://localhost:18090"
+    base-url: "https://tip-cms.zeabur.app"
     # CMS 发布到 tip-backend 时的简单鉴权 key（为空表示不校验）
     publish-key: "1234567890"
     # CMS 前端 dev server（用于 CORS）
