@@ -1,7 +1,7 @@
 # Tip Backend
 
 基于 Spring Boot 3 + MyBatis Plus 的 CPS 后端系统。
-《特品优购》
+《来运桔》
 
 ## 功能模块
 
@@ -30,7 +30,18 @@
 3. **配置大淘客API**
    在 `application.yml` 中配置 `app.dtk.app-key` 和 `app.dtk.app-secret`。
 
-4. **运行**
+4. **本地执行**
+   首次执行
+   ```bash
+   mvn install:install-file \
+   -DgroupId=com.taobao.sdk \
+   -DartifactId=taobao-open-sdk \
+   -Dversion=0.0.1-SNAPSHOT \
+   -Dpackaging=jar \
+   -Dfile=lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar
+   ```
+   
+5. **运行**
    ```bash
    mvn spring-boot:run
    ```

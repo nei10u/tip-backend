@@ -83,9 +83,6 @@
             <groupId>com.taobao.sdk</groupId>
             <artifactId>taobao-open-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <scope>system</scope>
-            <!-- project.basedir 指向 pom.xml 所在的目录 -->
-            <systemPath>${project.basedir}/lib/tao-taobao-sdk-java-auto_1645365907501-20250413.jar-0.0.1-SNAPSHOT.jar</systemPath>
         </dependency>
 
         <dependency>
