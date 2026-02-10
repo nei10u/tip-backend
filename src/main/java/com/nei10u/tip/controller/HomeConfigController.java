@@ -1,13 +1,9 @@
 package com.nei10u.tip.controller;
 
-import com.nei10u.tip.service.HomeService;
 import com.nei10u.tip.service.CmsHomeLayoutCacheService;
 import com.nei10u.tip.service.CmsRebateConfigCacheService;
-import com.nei10u.tip.vo.HomeConfigVO;
-import com.nei10u.tip.vo.HomeLayoutConfigVO;
-import com.nei10u.tip.vo.PublishRequest;
-import com.nei10u.tip.vo.PublishResultVO;
-import com.nei10u.tip.vo.ResponseVO;
+import com.nei10u.tip.service.HomeService;
+import com.nei10u.tip.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -57,11 +48,11 @@ public class HomeConfigController {
      * 获取首页聚合配置
      * <p>
      * 客户端 App 启动或进入首页时调用此接口，一次性获取轮播图、菜单、活动区等所有动态配置数据。
-     * 
+     *
      * @return ResponseVO<HomeConfigVO> 统一响应结构，data 字段包含 HomeConfigVO 数据。
-     *         &#064;Operation(summary = "获取首页配置") - OpenAPI/Swagger 注解，用于描述接口功能。
-     *         &#064;GetMapping("/config") - Spring MVC 注解，映射 GET 请求到
-     *         /api/home/config。
+     * &#064;Operation(summary = "获取首页配置") - OpenAPI/Swagger 注解，用于描述接口功能。
+     * &#064;GetMapping("/config") - Spring MVC 注解，映射 GET 请求到
+     * /api/home/config。
      */
     @Operation(summary = "获取首页配置")
     @GetMapping("/config")
@@ -162,28 +153,26 @@ public class HomeConfigController {
         result.setRequested(categories);
 
         // 当前已实现可刷新缓存：home_layout
-        if (set.contains("home_layout")) {
+        if (set.contains("home_layout") || set.contains("sync")) {
             cmsHomeLayoutCacheService.refreshFromCms();
             result.getRefreshed().add("home_layout");
         }
 
         // 返利页配置缓存（按配置的 platform codes 批量刷新）
-        if (set.contains("rebate_pages")) {
-            // 关键：把最新编辑的页面真正“发布”为 published，否则 tip-cms 的 rebate/pages 查询永远拿不到（只查 published）
-            // 注意：这里直接写入 cms.page（同库），避免依赖 tip-cms 管理接口鉴权/网络。
-            publishLatestCmsPages();
+        if (set.contains("rebate_pages") || set.contains("sync")) {
+            // 只有真正的发布动作（rebate_pages）才自动切换状态，纯同步（sync）只刷缓存
+            if (set.contains("rebate_pages")) {
+                publishLatestCmsPages();
+            }
             cmsRebateConfigCacheService.refreshAll();
             result.getRefreshed().add("rebate_pages");
         }
 
         // 其它类目目前为“只写库立即生效/或未实现缓存”，先按跳过返回（便于后续扩展）
-        for (String c : set) {
-            if ("home_layout".equals(c))
-                continue;
-            if ("rebate_pages".equals(c))
-                continue;
-            result.getSkipped().add(c);
-        }
+        for (String c : set)
+            if ("home_layout".equals(c) || "rebate_pages".equals(c) || "sync".equals(c)) {
+                // 后续扩展
+            }
 
         return ResponseVO.success(result);
     }

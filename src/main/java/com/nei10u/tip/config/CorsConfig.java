@@ -13,7 +13,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cms.allowed-origins:https://tip-cms.zeabur.app,http://localhost:5173}")
+    @Value("${app.cms.allowed-origins:https://tip-cms.zeabur.app,http://localhost:5174}")
     private String allowedOrigins;
 
     @Bean

@@ -42,13 +42,14 @@ server:
 app:
   cms:
     # tip-cms 后端地址（tip-backend 作为配置网关拉取并缓存）
-    base-url: "https://tip-cms.zeabur.app"
+    base-url: "https://tip-cms-backend.zeabur.app"
+    auth:
+      username: "admin"
+      password: "admin"
     # CMS 发布到 tip-backend 时的简单鉴权 key（为空表示不校验）
     publish-key: "1234567890"
     # CMS 前端 dev server（用于 CORS）
-    allowed-origins: "https://tip-cms.zeabur.app,http://localhost:5173"
-    # 返利页配置需要刷新的平台列表（发布 rebate_pages 时批量刷新）
-    rebate-platform-codes: "tb,jd,pdd,vip"
+    allowed-origins: "https://tip-cms.zeabur.app,http://localhost:5174"
   dtk:
     app-key: 6936f422c3a79
     app-secret: b8f60d673b879482b88f21d9e6798df3

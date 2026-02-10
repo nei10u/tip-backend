@@ -4,11 +4,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nei10u.tip.service.CmsHomeLayoutCacheService;
+import com.nei10u.tip.support.CmsBasicAuthSupport;
 import com.nei10u.tip.vo.HomeLayoutConfigVO;
 import com.nei10u.tip.vo.HomeLayoutSectionVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,6 +31,7 @@ public class CmsHomeLayoutCacheServiceImpl implements CmsHomeLayoutCacheService 
     private final ObjectMapper objectMapper;
     private final RestTemplateBuilder restTemplateBuilder;
     private final JdbcTemplate jdbcTemplate;
+    private final CmsBasicAuthSupport cmsBasicAuthSupport;
 
     @Value("${app.cms.base-url:http://localhost:18090}")
     private String cmsBaseUrl;
@@ -61,7 +66,11 @@ public class CmsHomeLayoutCacheServiceImpl implements CmsHomeLayoutCacheService 
     @Override
     public HomeLayoutConfigVO refreshFromCms() {
         final String url = cmsBaseUrl.replaceAll("/+$", "") + "/api/cms/home/layout";
-        final String raw = restTemplate().getForObject(url, String.class);
+        HttpEntity<Void> entity = cmsBasicAuthSupport.authedEntity();
+
+        final ResponseEntity<String> response = restTemplate().exchange(url, HttpMethod.GET, entity, String.class);
+        final String raw = response.getBody();
+        
         final List<HomeLayoutSectionVO> sections = parseCmsLayout(raw);
         HomeLayoutConfigVO vo = HomeLayoutConfigVO.of(sections);
         cacheRef.set(vo);
