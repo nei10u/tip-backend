@@ -85,4 +85,19 @@ public interface UserService {
      * @param sessionKey 会话密钥
      */
     UserDto loginByWechat(String openId, String unionId, String sessionKey);
+
+    /**
+     * 账号密码登录（手机号 + 密码）
+     */
+    UserDto loginByPassword(String phone, String password);
+
+    /**
+     * 短信验证码登录（手机号 + 验证码）
+     */
+    UserDto loginBySms(String phone, String code);
+
+    /**
+     * 短信验证码注册（手机号 + 验证码 + 密码）
+     */
+    UserDto registerBySms(String phone, String code, String password);
 }

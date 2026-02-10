@@ -1,6 +1,10 @@
 package com.nei10u.tip.controller;
 
+import com.nei10u.tip.auth.SmsCodeService;
 import com.nei10u.tip.dto.UserDto;
+import com.nei10u.tip.dto.PasswordLoginRequest;
+import com.nei10u.tip.dto.SmsLoginRequest;
+import com.nei10u.tip.dto.SmsRegisterRequest;
 import com.nei10u.tip.model.User;
 import com.nei10u.tip.service.RealNameService;
 import com.nei10u.tip.service.UserService;
@@ -9,6 +13,7 @@ import com.nei10u.tip.vo.ResponseVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -25,6 +30,7 @@ public class UserController {
 
     // 依赖注入：用户业务服务
     private final UserService userService;
+    private final SmsCodeService smsCodeService;
     // 依赖注入：微信服务（处理与微信服务器的交互）
     private final WechatService wechatService;
     // 依赖注入：实名认证服务
@@ -65,6 +71,32 @@ public class UserController {
         UserDto userDto = userService.loginByWechat(session.getOpenid(), session.getUnionid(), session.getSessionKey());
 
         return ResponseVO.success(userDto);
+    }
+
+    @Operation(summary = "发送短信验证码")
+    @PostMapping("/sms/send")
+    public ResponseVO<Boolean> sendSms(@RequestParam String phone) {
+        // 实际短信发送逻辑在 SmsCodeService 内部（Redis + 日志）
+        smsCodeService.send(phone);
+        return ResponseVO.success(true);
+    }
+
+    @Operation(summary = "账号密码登录")
+    @PostMapping("/login/password")
+    public ResponseVO<UserDto> loginByPassword(@Valid @RequestBody PasswordLoginRequest req) {
+        return ResponseVO.success(userService.loginByPassword(req.getPhone(), req.getPassword()));
+    }
+
+    @Operation(summary = "短信验证码登录")
+    @PostMapping("/login/sms")
+    public ResponseVO<UserDto> loginBySms(@Valid @RequestBody SmsLoginRequest req) {
+        return ResponseVO.success(userService.loginBySms(req.getPhone(), req.getCode()));
+    }
+
+    @Operation(summary = "短信验证码注册")
+    @PostMapping("/register/sms")
+    public ResponseVO<UserDto> registerBySms(@Valid @RequestBody SmsRegisterRequest req) {
+        return ResponseVO.success(userService.registerBySms(req.getPhone(), req.getCode(), req.getPassword()));
     }
 
     /**

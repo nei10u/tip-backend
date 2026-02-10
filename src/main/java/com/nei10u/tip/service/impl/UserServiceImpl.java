@@ -1,5 +1,7 @@
 package com.nei10u.tip.service.impl;
 
+import com.nei10u.tip.auth.JwtService;
+import com.nei10u.tip.auth.SmsCodeService;
 import com.nei10u.tip.dto.UserDto;
 import com.nei10u.tip.exception.BusinessException;
 import com.nei10u.tip.mapper.UserMapper;
@@ -7,8 +9,11 @@ import com.nei10u.tip.model.User;
 import com.nei10u.tip.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 /**
  * 用户服务实现类
@@ -19,6 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
+    private final JwtService jwtService;
+    private final SmsCodeService smsCodeService;
+
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Override
     @Transactional
@@ -192,12 +201,86 @@ public class UserServiceImpl implements UserService {
         // user.setToken(sessionKey);
         // userMapper.updateById(user);
 
-        return convertToDto(user);
+        // 4. 生成 JWT 并回写
+        final String token = jwtService.issueToken(user.getId(), Map.of(
+                "phone", user.getPhone() == null ? "" : user.getPhone()
+        ));
+        user.setToken(token);
+        userMapper.updateById(user);
+
+        return convertToDto(user, token);
     }
 
-    private UserDto convertToDto(User user) {
+    @Override
+    public UserDto loginByPassword(String phone, String password) {
+        final User user = userMapper.getUserByPhone(phone);
+        if (user == null) {
+            throw new BusinessException("USER_NOT_FOUND", "用户不存在");
+        }
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            throw new BusinessException("NO_PASSWORD", "该账号未设置密码，请使用短信登录");
+        }
+        if (!encoder.matches(password, user.getPasswordHash())) {
+            throw new BusinessException("PASSWORD_INVALID", "密码错误");
+        }
+
+        final String token = jwtService.issueToken(user.getId(), Map.of(
+                "phone", user.getPhone() == null ? "" : user.getPhone()
+        ));
+        user.setToken(token);
+        userMapper.updateById(user);
+        return convertToDto(user, token);
+    }
+
+    @Override
+    @Transactional
+    public UserDto loginBySms(String phone, String code) {
+        smsCodeService.verifyOrThrow(phone, code);
+        User user = userMapper.getUserByPhone(phone);
+        if (user == null) {
+            // 自动注册（短信登录即注册）
+            user = new User();
+            user.setPhone(phone);
+            user.setStatus(1);
+            userMapper.insert(user);
+        }
+
+        final String token = jwtService.issueToken(user.getId(), Map.of(
+                "phone", user.getPhone() == null ? "" : user.getPhone()
+        ));
+        user.setToken(token);
+        userMapper.updateById(user);
+        return convertToDto(user, token);
+    }
+
+    @Override
+    @Transactional
+    public UserDto registerBySms(String phone, String code, String password) {
+        smsCodeService.verifyOrThrow(phone, code);
+
+        final User existing = userMapper.getUserByPhone(phone);
+        if (existing != null) {
+            throw new BusinessException("USER_EXISTS", "手机号已注册，请直接登录");
+        }
+
+        final User user = new User();
+        user.setPhone(phone);
+        user.setStatus(1);
+        user.setPasswordHash(encoder.encode(password));
+        userMapper.insert(user);
+
+        final String token = jwtService.issueToken(user.getId(), Map.of(
+                "phone", user.getPhone() == null ? "" : user.getPhone()
+        ));
+        user.setToken(token);
+        userMapper.updateById(user);
+        return convertToDto(user, token);
+    }
+
+    private UserDto convertToDto(User user, String token) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
         dto.setNickname(user.getNickname());
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setPhone(user.getPhone());
@@ -215,6 +298,11 @@ public class UserServiceImpl implements UserService {
         dto.setUserDiscount(user.getUserDiscount());
         dto.setTotalActualFee(user.getTotalActualFee());
         dto.setFrozenFee(user.getFrozenFee());
+        dto.setToken(token);
         return dto;
+    }
+
+    private UserDto convertToDto(User user) {
+        return convertToDto(user, user.getToken());
     }
 }

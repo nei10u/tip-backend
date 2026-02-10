@@ -155,6 +155,19 @@ public class User {
     private String phone;
 
     /**
+     * 登录账号（可选）
+     *
+     * 说明：当前 App 侧主要用手机号作为账号；该字段用于后续扩展“用户名登录”。
+     */
+    private String username;
+
+    /**
+     * 密码哈希（BCrypt）
+     */
+    @TableField("password_hash")
+    private String passwordHash;
+
+    /**
      * 邮箱（可选）
      */
     private String email;

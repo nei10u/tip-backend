@@ -37,6 +37,11 @@ public interface UserMapper extends BaseMapper<User> {
     User getUserByPhone(@Param("phone") String phone);
 
     /**
+     * 根据用户名查询
+     */
+    User getUserByUsername(@Param("username") String username);
+
+    /**
      * 根据拼多多PID查询
      */
     User getUserByPddPid(@Param("pddPid") String pddPid);

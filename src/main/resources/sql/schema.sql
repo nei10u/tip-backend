@@ -86,12 +86,19 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS jd_status BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS user_discount DECIMAL(10, 4);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS total_actual_fee DECIMAL(10, 2);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS frozen_fee DECIMAL(10, 2);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(128);
+
+-- JWT 字符串通常超过 128，扩大 token 字段长度（若历史库为 128）
+ALTER TABLE users ALTER COLUMN token TYPE VARCHAR(512);
 
 -- 索引（放在增量加字段之后，避免历史库缺列导致建索引失败）
 CREATE INDEX IF NOT EXISTS idx_users_relation_id ON users(relation_id);
 CREATE INDEX IF NOT EXISTS idx_users_union_id ON users(union_id);
 CREATE INDEX IF NOT EXISTS idx_users_token ON users(token);
 CREATE INDEX IF NOT EXISTS idx_users_jd_auth_id ON users(jd_auth_id);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 
 -- 模拟用户数据（用于本地调试）
 INSERT INTO users (

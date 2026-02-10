@@ -40,6 +40,10 @@ server:
 
 # API配置
 app:
+  jwt:
+    # 生产环境请通过环境变量覆盖（不要在仓库中硬编码真实 secret）
+    secret: "change_me_in_prod_please_change_me_32_bytes_min"
+    ttl-seconds: 2592000
   cms:
     # tip-cms 后端地址（tip-backend 作为配置网关拉取并缓存）
     base-url: "https://tip-cms-backend.zeabur.app"

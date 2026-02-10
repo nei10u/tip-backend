@@ -23,6 +23,10 @@
         SELECT * FROM users WHERE phone = #{phone}
     </select>
 
+    <select id="getUserByUsername" resultType="com.nei10u.tip.model.User">
+        SELECT * FROM users WHERE username = #{username} LIMIT 1
+    </select>
+
     <select id="getUserByPddPid" resultType="com.nei10u.tip.model.User">
         SELECT * FROM users WHERE pdd_pid = #{pddPid}
     </select>

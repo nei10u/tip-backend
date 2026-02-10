@@ -11,6 +11,8 @@ public class UserDto {
 
     private Long id;
 
+    private String username;
+
     // CPS字段
     private Long relationId;
     private Long specialId;
