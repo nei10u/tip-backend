@@ -46,7 +46,7 @@ app:
     # CMS 发布到 tip-backend 时的简单鉴权 key（为空表示不校验）
     publish-key: ""
     # CMS 前端 dev server（用于 CORS）
-    allowed-origins: "http://localhost:5173"
+    allowed-origins: "https://tip-cms.zeabur.app,http://localhost:5173"
     # 返利页配置需要刷新的平台列表（发布 rebate_pages 时批量刷新）
     rebate-platform-codes: "tb,jd,pdd,vip"
   dtk:
