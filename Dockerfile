@@ -1,6 +1,8 @@
-FROM docker.io/library/eclipse-temurin:17
-LABEL "language"="java"
-LABEL "framework"="spring-boot"
+# FROM docker.io/library/eclipse-temurin:17
+# LABEL "language"="java"
+# LABEL "framework"="spring-boot"
+
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 # # 安装 Maven
 # RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
