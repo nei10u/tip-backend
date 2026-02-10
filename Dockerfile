@@ -2,13 +2,13 @@ FROM docker.io/library/eclipse-temurin:17
 LABEL "language"="java"
 LABEL "framework"="spring-boot"
 
-# 安装 Maven
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt update \
-    && apt-get --no-install-recommends install -y \
-    maven \
-    ca-certificates-java
+# # 安装 Maven
+# RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+#     --mount=type=cache,target=/var/lib/apt,sharing=locked \
+#     apt update \
+#     && apt-get --no-install-recommends install -y \
+#     maven \
+#     ca-certificates-java
 
 WORKDIR /src
 
