@@ -160,6 +160,28 @@ public class UserController {
         return ResponseVO.success(userDto);
     }
 
+    @Operation(summary = "获取当前登录用户（Bearer token）")
+    @GetMapping("/me")
+    public ResponseVO<UserDto> me(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(value = "token", required = false) String token
+    ) {
+        final String t = extractToken(authorization, token);
+        return ResponseVO.success(userService.getUserByToken(t));
+    }
+
+    private static String extractToken(String authorization, String token) {
+        if (token != null && !token.trim().isEmpty()) {
+            return token.trim();
+        }
+        if (authorization == null) return "";
+        final String a = authorization.trim();
+        if (a.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
+            return a.substring("Bearer ".length()).trim();
+        }
+        return a;
+    }
+
     /**
      * 更新用户信息
      * <p>

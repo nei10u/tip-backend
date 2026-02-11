@@ -99,6 +99,10 @@ CREATE INDEX IF NOT EXISTS idx_users_token ON users(token);
 CREATE INDEX IF NOT EXISTS idx_users_jd_auth_id ON users(jd_auth_id);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+-- 关键唯一性：手机号作为账号体系主键（允许 phone 为空的历史微信用户）
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_phone
+    ON users(phone)
+    WHERE phone IS NOT NULL AND phone <> '';
 
 -- 模拟用户数据（用于本地调试）
 INSERT INTO users (

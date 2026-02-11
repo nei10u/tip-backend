@@ -277,6 +277,19 @@ public class UserServiceImpl implements UserService {
         return convertToDto(user, token);
     }
 
+    @Override
+    public UserDto getUserByToken(String token) {
+        final String t = token == null ? "" : token.trim();
+        if (t.isEmpty()) {
+            throw new BusinessException("UNAUTHORIZED", "未登录");
+        }
+        final User user = userMapper.getUserByToken(t);
+        if (user == null) {
+            throw new BusinessException("UNAUTHORIZED", "登录已过期");
+        }
+        return convertToDto(user, t);
+    }
+
     private UserDto convertToDto(User user, String token) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());

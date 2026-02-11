@@ -100,4 +100,12 @@ public interface UserService {
      * 短信验证码注册（手机号 + 验证码 + 密码）
      */
     UserDto registerBySms(String phone, String code, String password);
+
+    /**
+     * 通过 token 获取当前用户（用于 Bearer token 鉴权场景）。
+     *
+     * 说明：当前项目将 token 作为“服务端可控会话串”回写到 users.token 中；
+     * 因此这里采用 DB 查找，而不是纯 JWT 本地验签。
+     */
+    UserDto getUserByToken(String token);
 }

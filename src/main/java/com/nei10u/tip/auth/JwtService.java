@@ -26,7 +26,7 @@ public class JwtService {
     private final long ttlSeconds;
 
     public JwtService(
-            @Value("${app.jwt.secret}") String secret,
+            @Value("${app.jwt.secret:dev_only_change_me_to_long_random_secret}") String secret,
             @Value("${app.jwt.ttl-seconds:2592000}") long ttlSeconds
     ) {
         // HMAC key 需要足够长度；不足时仍可工作但安全性下降
