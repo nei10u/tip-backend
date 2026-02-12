@@ -102,6 +102,15 @@ public interface UserService {
     UserDto registerBySms(String phone, String code, String password);
 
     /**
+     * 绑定手机号（微信登录后补齐手机号）
+     *
+     * @param userId 当前登录用户 ID
+     * @param phone  手机号
+     * @param code   短信验证码
+     */
+    UserDto bindPhone(Long userId, String phone, String code);
+
+    /**
      * 通过 token 获取当前用户（用于 Bearer token 鉴权场景）。
      *
      * 说明：当前项目将 token 作为“服务端可控会话串”回写到 users.token 中；

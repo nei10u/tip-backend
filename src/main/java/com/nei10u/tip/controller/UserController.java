@@ -1,6 +1,7 @@
 package com.nei10u.tip.controller;
 
 import com.nei10u.tip.auth.SmsCodeService;
+import com.nei10u.tip.dto.BindPhoneRequest;
 import com.nei10u.tip.dto.UserDto;
 import com.nei10u.tip.dto.PasswordLoginRequest;
 import com.nei10u.tip.dto.SmsLoginRequest;
@@ -97,6 +98,18 @@ public class UserController {
     @PostMapping("/register/sms")
     public ResponseVO<UserDto> registerBySms(@Valid @RequestBody SmsRegisterRequest req) {
         return ResponseVO.success(userService.registerBySms(req.getPhone(), req.getCode(), req.getPassword()));
+    }
+
+    @Operation(summary = "绑定手机号（微信登录后补齐手机号）")
+    @PostMapping("/bind/phone")
+    public ResponseVO<UserDto> bindPhone(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(value = "token", required = false) String token,
+            @Valid @RequestBody BindPhoneRequest req
+    ) {
+        final String t = extractToken(authorization, token);
+        final UserDto me = userService.getUserByToken(t);
+        return ResponseVO.success(userService.bindPhone(me.getId(), req.getPhone(), req.getCode()));
     }
 
     /**
